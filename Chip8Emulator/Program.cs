@@ -21,13 +21,17 @@ namespace Chip8Emulator
                 {
                     services.AddTransient<IDisplay, Display>();
                     //services.AddSingleton<IDisplay, Display>();
+                    services.AddTransient<ISpeaker, Speaker>();
+                    services.AddTransient<IKeyboardModule, KeyboardModule>();
+                    services.AddTransient<ICPU, CPU>();
+                    services.AddTransient<IChip8, Chip8>();
                 })
                 .UseSerilog()
                 .Build();
 
-            var display = ActivatorUtilities.CreateInstance<Display>(host.Services);
+            var chip8 = ActivatorUtilities.CreateInstance<Chip8>(host.Services);
 
-            display.Render();
+            chip8.Init();
         }
 
         private static void ProgramInit()
