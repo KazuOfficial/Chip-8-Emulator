@@ -27,15 +27,16 @@ namespace Chip8Emulator
             Step(fpsInterval, then);
         }
 
-        private void Step(int fpsInterval, DateTime then)
+        public void Step(int fpsInterval, DateTime then)
         {
-            DateTime now = DateTime.Now;
-            TimeSpan elapsed = now - then;
+            //DateTime now = DateTime.Now;
+            //TimeSpan elapsed = now - then;
 
-            if (elapsed.TotalMilliseconds > fpsInterval)
-            {
-                cpu.Cycle();
-            }
+            //if (elapsed.TotalMilliseconds > fpsInterval)
+            //{
+            //    cpu.Cycle();
+            //}
+            cpu.Cycle();
         }
     }
 }

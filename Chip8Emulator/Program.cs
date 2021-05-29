@@ -19,7 +19,6 @@ namespace Chip8Emulator
             var host = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
                 {
-                    services.AddTransient<IDisplay, Display>();
                     //services.AddSingleton<IDisplay, Display>();
                     services.AddTransient<ISpeaker, Speaker>();
                     services.AddTransient<IKeyboardModule, KeyboardModule>();
@@ -42,7 +41,8 @@ namespace Chip8Emulator
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(builder.Build())
                 .Enrich.FromLogContext()
-                .WriteTo.File($"{Directory.GetCurrentDirectory()}emulator.log")
+                //.WriteTo.File($"{Directory.GetCurrentDirectory()}emulator.log")
+                .WriteTo.File(@"D:\\emulator.log")
                 .CreateLogger();
 
             Log.Logger.Information("Application Starting");
