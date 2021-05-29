@@ -21,7 +21,6 @@ namespace Chip8Emulator
                 {
                     //services.AddSingleton<IDisplay, Display>();
                     services.AddTransient<ISpeaker, Speaker>();
-                    services.AddTransient<IKeyboardModule, KeyboardModule>();
                     services.AddTransient<ICPU, CPU>();
                     services.AddTransient<IChip8, Chip8>();
                 })

@@ -9,7 +9,7 @@ namespace Chip8Emulator
     public class Chip8 : IChip8
     {
         private readonly ICPU cpu;
-        private readonly int fps = 60;
+        //private readonly int fps = 60;
 
         public Chip8(ICPU cpu)
         {
@@ -18,16 +18,18 @@ namespace Chip8Emulator
 
         public void Init()
         {
-            int fpsInterval = 1000 / fps;
-            DateTime then = DateTime.Now;
+            //int fpsInterval = 1000 / fps;
+            //DateTime then = DateTime.Now;
 
             cpu.LoadSpritesToMemory();
-            cpu.LoadProgramIntoMemory(@"D:\\BLITZ");
+            cpu.LoadProgramIntoMemory(@"D:\\8chiproms\\PONG");
 
-            Step(fpsInterval, then);
+            //Step(fpsInterval, then);
+            Step();
         }
 
-        public void Step(int fpsInterval, DateTime then)
+        //public void Step(int fpsInterval, DateTime then)
+        public void Step()
         {
             //DateTime now = DateTime.Now;
             //TimeSpan elapsed = now - then;

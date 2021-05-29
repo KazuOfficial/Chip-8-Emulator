@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using SFML.Graphics;
 using SFML.System;
+using SFML.Window;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,7 +13,7 @@ namespace Chip8Emulator
 {
     public class CPU : ICPU
     {
-        private static RenderWindow win = new RenderWindow(new SFML.Window.VideoMode(32, 64), "Chip 8 Emulator");
+        private static RenderWindow win = new RenderWindow(new SFML.Window.VideoMode(64, 32), "Chip 8 Emulator");
         //private static int vectorListSize = 1;
         //private static Vector2f[] vectors = new Vector2f[vectorListSize];
         private static List<Vector2f> vectors = new List<Vector2f>();
@@ -31,15 +32,80 @@ namespace Chip8Emulator
         private int speed = 10;
 
         private readonly ISpeaker speaker;
-        private readonly IKeyboardModule keyboard;
 
-        public CPU(ISpeaker speaker, IKeyboardModule keyboard)
+        public CPU(ISpeaker speaker)
         {
             this.speaker = speaker;
-            this.keyboard = keyboard;
             win.SetVerticalSyncEnabled(true);
-            win.SetFramerateLimit(10);
+            win.SetFramerateLimit(60);
             win.Closed += Win_Closed;
+            win.SetKeyRepeatEnabled(false);
+            win.KeyPressed += new EventHandler<KeyEventArgs>(KeyPressed);
+            win.KeyReleased += new EventHandler<KeyEventArgs>(KeyReleased);
+        }
+
+        //Keyboard
+
+        private Dictionary<Keyboard.Key, int> keys = new Dictionary<Keyboard.Key, int>
+        {
+            { Keyboard.Key.Num1, 0x1 },
+            { Keyboard.Key.Num2, 0x2 },
+            { Keyboard.Key.Num3, 0x3 },
+            { Keyboard.Key.Num4, 0xc },
+            { Keyboard.Key.Q, 0x4 },
+            { Keyboard.Key.W, 0x5 },
+            { Keyboard.Key.E, 0x6 },
+            { Keyboard.Key.R, 0xD },
+            { Keyboard.Key.A, 0x7 },
+            { Keyboard.Key.S, 0x8 },
+            { Keyboard.Key.D, 0x9 },
+            { Keyboard.Key.F, 0xE },
+            { Keyboard.Key.Z, 0xA },
+            { Keyboard.Key.X, 0x0 },
+            { Keyboard.Key.C, 0xB },
+            { Keyboard.Key.V, 0xF },
+        };
+
+        private Dictionary<int, bool> keyIsActive = new Dictionary<int, bool>
+        {
+            { 0x1, false },
+            { 0x2, false },
+            { 0x3, false },
+            { 0xc, false },
+            { 0x4, false },
+            { 0x5, false },
+            { 0x6, false },
+            { 0xD, false },
+            { 0x7, false },
+            { 0x8, false },
+            { 0x9, false },
+            { 0xE, false },
+            { 0xA, false },
+            { 0x0, false },
+            { 0xB, false },
+            { 0xF, false },
+        };
+
+        private int[] keysPressed;
+
+        public bool IsKeyPressed(int keyCode)
+        {
+            return keyIsActive.FirstOrDefault(x => x.Key == keyCode).Value;
+        }
+
+        private void KeyPressed(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.IsKeyPressed(e.Code))
+            {
+                keyIsActive[keys[e.Code]] = true;
+                Log.Logger.Information("PRESSED KEY!!!!!!!!!!!!!!!: {pressed}", e.Code);
+            }
+        }
+
+        private void KeyReleased(object sender, KeyEventArgs e)
+        {
+            keyIsActive[keys[e.Code]] = false;
+            Log.Logger.Information("RELEASED!!!!!!!!!!!!!!!: {released}", e.Code);
         }
 
         //Graphics
@@ -387,14 +453,18 @@ namespace Chip8Emulator
                     switch (opcode & 0xFF)
                     {
                         case 0x9E:
-                            //Could be wrong
-                            keyboard.IsKeyPressed(v[x]);
-                            pc += 2;
-                            Log.Logger.Information("Instruction 0x9E called. Pressing buttons :D");
+                            if (IsKeyPressed(v[x]))
+                            {
+                                pc += 2;
+                                Log.Logger.Information("Instruction 0x9E called. Pressing buttons :D");
+                            }
                             break;
                         case 0xA1:
-                            //keyboardstuff
-                            Log.Logger.Information("Instruction 0xA1 called. Keyboard stuff :D");
+                            if (!IsKeyPressed(v[x]))
+                            {
+                                pc += 2;
+                                Log.Logger.Information("Instruction 0xA1 called. Keyboard stuff :D");
+                            }
                             break;
                     }
 

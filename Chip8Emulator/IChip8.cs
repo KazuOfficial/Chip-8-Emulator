@@ -3,5 +3,6 @@
     public interface IChip8
     {
         void Init();
+        void Step();
     }
 }
