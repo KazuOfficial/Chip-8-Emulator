@@ -2,7 +2,6 @@
 {
     public interface ICPU
     {
-        void Clear();
         void Cycle();
         bool IsKeyPressed(int keyCode);
         void LoadProgramIntoMemory(string path);

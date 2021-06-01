@@ -40,15 +40,16 @@ namespace Chip8Emulator
         public CPU(ISpeaker speaker)
         {
             this.speaker = speaker;
-            win.SetVerticalSyncEnabled(true);
+
             win.SetFramerateLimit(60);
-            win.Closed += Win_Closed;
+            win.SetVerticalSyncEnabled(true);
             win.SetKeyRepeatEnabled(false);
+
+            win.Closed += Win_Closed;
             win.KeyPressed += new EventHandler<KeyEventArgs>(KeyPressed);
             win.KeyReleased += new EventHandler<KeyEventArgs>(KeyReleased);
         }
 
-        //Keyboard
 
         private Dictionary<Keyboard.Key, int> keys = new Dictionary<Keyboard.Key, int>
         {
@@ -185,9 +186,9 @@ namespace Chip8Emulator
             return !Convert.ToBoolean(display[pixelLoc]);
         }
 
-        public void Clear()
+        private void Clear()
         {
-            win.Clear(Color.Black);
+            display = new int[cols * rows];
             Log.Logger.Information("Screen cleared");
         }
 
@@ -201,8 +202,6 @@ namespace Chip8Emulator
             win.Close();
             Log.Logger.Information("Window closed");
         }
-
-        //CPU
 
         public void LoadSpritesToMemory()
         {
@@ -254,7 +253,7 @@ namespace Chip8Emulator
                 {
                     if (!paused)
                     {
-                        var opcode = memory[pc] << 8 | memory[pc + 1];
+                        int opcode = memory[pc] << 8 | memory[pc + 1];
                         ExecuteInstruction(opcode);
                         Log.Logger.Information("Emulator paused: {paused}, opcode: {opcode}", paused, opcode);
                     }
@@ -297,7 +296,7 @@ namespace Chip8Emulator
         {
             if (soundTimer > 0)
             {
-                speaker.Play(1, 440);
+                speaker.Play(50f, 1.2f);
             }
             else
             {
@@ -319,7 +318,7 @@ namespace Chip8Emulator
                     switch (opcode)
                     {
                         case 0x00E0:
-                            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                            Clear();
                             Log.Logger.Information("Instruction 0x00E0 called. Window cleared.");
                             break;
                         case 0x00EE:
@@ -371,7 +370,7 @@ namespace Chip8Emulator
                     switch (opcode & 0xF)
                     {
                         case 0x0:
-                            v[y] = v[x];
+                            v[x] = v[y];
                             Log.Logger.Information("Instruction 0x8000 called. v[y] = v[x]. v[y]: {vy}", v[y]);
                             break;
                         case 0x1:
