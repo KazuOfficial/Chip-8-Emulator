@@ -9,7 +9,7 @@ namespace Chip8Emulator
 {
     public class Speaker : ISpeaker
     {
-        private static SoundBuffer buffer = new SoundBuffer(@"D:\\kineyes.wav");
+        private static SoundBuffer buffer = new SoundBuffer(@"D:\\oof.wav");
         private Sound sound = new Sound(buffer);
 
         public void Play(float gain, float pitch)

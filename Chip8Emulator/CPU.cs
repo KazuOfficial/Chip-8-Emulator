@@ -13,15 +13,12 @@ namespace Chip8Emulator
 {
     public class CPU : ICPU
     {
-        private static RenderWindow win = new RenderWindow(new SFML.Window.VideoMode(64, 32), "Chip 8 Emulator");
-        //private static int vectorListSize = 1;
-        //private static Vector2f[] vectors = new Vector2f[vectorListSize];
-        private static List<Vector2f> vectors = new List<Vector2f>();
+        private static RenderWindow win = new RenderWindow(new VideoMode(64, 32), "Chip 8 Emulator");
 
         // 4KB (4096 bytes) of memory
         private byte[] memory = new byte[4096];
         // 16 8-bit registers
-        //private byte[] v = new byte[16];
+
         private int[] v = new int[16];
         private int i = 0;
         private int delayTimer = 0;
@@ -30,6 +27,13 @@ namespace Chip8Emulator
         private Stack<int> stack = new Stack<int>();
         private bool paused = false;
         private int speed = 10;
+
+        private static int cols = 64;
+        private static int rows = 32;
+
+        private int[] display = new int[cols * rows];
+
+        private int onNextPress;
 
         private readonly ISpeaker speaker;
 
@@ -86,7 +90,36 @@ namespace Chip8Emulator
             { 0xF, false },
         };
 
-        private int[] keysPressed;
+        public void Render()
+        {
+            for (var i = 0; i < cols * rows; i++)
+            {
+                // Grabs the x position of the pixel based off of `i`
+                var x = (i % cols);
+
+                // Grabs the y position of the pixel based off of `i`
+                var y = (i / cols);
+
+                // If the value at this.display[i] == 1, then draw a pixel.
+                if (Convert.ToBoolean(display[i]))
+                {
+                    // Set the pixel color to black
+                    //this.ctx.fillStyle = '#000';
+
+                    RectangleShape pixel = new RectangleShape
+                    {
+                        Size = new Vector2f(1, 1),
+                        FillColor = Color.White,
+                        Position = new Vector2f(x, y)
+                    };
+
+                    win.Draw(pixel);
+
+                    // Place a pixel at position (x, y) with a width and height of scale
+                    //this.ctx.fillRect(x, y, this.scale, this.scale);
+                }
+            }
+        }
 
         public bool IsKeyPressed(int keyCode)
         {
@@ -100,6 +133,11 @@ namespace Chip8Emulator
                 keyIsActive[keys[e.Code]] = true;
                 Log.Logger.Information("PRESSED KEY!!!!!!!!!!!!!!!: {pressed}", e.Code);
             }
+
+            if (keyIsActive[keys[e.Code]])
+            {
+                onNextPress = keys.FirstOrDefault(x => x.Key == e.Code).Value;
+            }
         }
 
         private void KeyReleased(object sender, KeyEventArgs e)
@@ -110,11 +148,8 @@ namespace Chip8Emulator
 
         //Graphics
 
-        public void SetPixel(int x, int y)
+        public bool SetPixel(int x, int y)
         {
-            int cols = 64;
-            int rows = 32;
-
             if (x > cols)
             {
                 x -= cols;
@@ -133,25 +168,22 @@ namespace Chip8Emulator
                 y += rows;
             }
 
-            //int pixelLoc = x + (y + cols);
+            int pixelLoc = x + (y * cols);
 
-            //RectangleShape pixel = new RectangleShape
-            //{
-            //    Size = new Vector2f(1, 1),
-            //    FillColor = Color.White,
-            //    Position = new Vector2f(x, y)
-            //};
+            display[pixelLoc] ^= 1;
 
-            //vectorListSize++;
-            vectors.Add(new Vector2f(x, y));
-
-            Log.Logger.Information("Pixel has been drawn. x: {x} y: {y}", x, y);
+            return !Convert.ToBoolean(display[pixelLoc]);
         }
 
         public void Clear()
         {
             win.Clear(Color.Black);
             Log.Logger.Information("Screen cleared");
+        }
+
+        private static void Win_Resized(object sender, SizeEventArgs e)
+        {
+            win.SetView(new View(new FloatRect(0, 0, e.Width, e.Height)));
         }
 
         private static void Win_Closed(object sender, EventArgs e)
@@ -223,19 +255,14 @@ namespace Chip8Emulator
                     UpdateTimers();
                 }
 
-                PlaySound();
                 win.DispatchEvents();
+
                 win.Clear(Color.Black);
-                foreach (Vector2f vector2F in vectors)
-                {
-                    win.Draw(new RectangleShape
-                    {
-                        Size = new Vector2f(1, 1),
-                        FillColor = Color.White,
-                        Position = vector2F
-                    });
-                }
-                Log.Logger.Information("Vectors: {vectors}.", vectors);
+
+                Render();
+
+                PlaySound();
+
                 win.Display();
                 Log.Logger.Information("Cycle ended.");
             }
@@ -282,7 +309,7 @@ namespace Chip8Emulator
                     switch (opcode)
                     {
                         case 0x00E0:
-                            win.Clear();
+                            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                             Log.Logger.Information("Instruction 0x00E0 called. Window cleared.");
                             break;
                         case 0x00EE:
@@ -414,8 +441,6 @@ namespace Chip8Emulator
                     break;
                 case 0xC000:
                     var rand = new Random();
-                    //int randNumber = rand.Next(0, 255);
-                    //double randToDouble = Decimal.ToDouble(randNumber);
                     double randomDouble = rand.NextDouble() * 255;
 
                     //!Could be wrong
@@ -440,8 +465,11 @@ namespace Chip8Emulator
                         {
                             if ((sprite & 0x80) > 0)
                             {
-                                SetPixel(v[x] + col, v[y] + row);
-                                v[0xF] = 1;
+                                //ErasePixel(v[x] + col, v[y] + row);
+                                if (SetPixel(v[x] + col, v[y] + row))
+                                {
+                                    v[0xF] = 1;
+                                }
                             }
 
                             sprite <<= 1;
@@ -479,7 +507,8 @@ namespace Chip8Emulator
                         case 0x0A:
                             paused = true;
 
-                            //keyboardstuff
+                            v[x] = onNextPress;
+                            paused = false;
                             Log.Logger.Information("Instruction 0x0A called. Pause emulator.");
                             break;
                         case 0x15:

@@ -18,26 +18,21 @@ namespace Chip8Emulator
 
         public void Init()
         {
-            //int fpsInterval = 1000 / fps;
-            //DateTime then = DateTime.Now;
+            //int fpsInterval = 1000 / 60;
+            //int then = DateTime.Now.Millisecond;
 
             cpu.LoadSpritesToMemory();
             cpu.LoadProgramIntoMemory(@"D:\\8chiproms\\PONG");
 
-            //Step(fpsInterval, then);
             Step();
         }
 
         //public void Step(int fpsInterval, DateTime then)
-        public void Step()
+        private void Step()
         {
-            //DateTime now = DateTime.Now;
-            //TimeSpan elapsed = now - then;
+            //int now = DateTime.Now.Millisecond;
+            //int elapsed = now - then;
 
-            //if (elapsed.TotalMilliseconds > fpsInterval)
-            //{
-            //    cpu.Cycle();
-            //}
             cpu.Cycle();
         }
     }

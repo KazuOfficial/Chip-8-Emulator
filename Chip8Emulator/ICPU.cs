@@ -4,8 +4,10 @@
     {
         void Clear();
         void Cycle();
+        bool IsKeyPressed(int keyCode);
         void LoadProgramIntoMemory(string path);
         void LoadSpritesToMemory();
-        void SetPixel(int x, int y);
+        void Render();
+        bool SetPixel(int x, int y);
     }
 }
