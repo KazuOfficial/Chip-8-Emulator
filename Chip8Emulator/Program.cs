@@ -13,14 +13,11 @@ namespace Chip8Emulator
     {
         public static void Main(string[] args)
         {
-            //Console.WriteLine("Hello World!");
             ProgramInit();
 
             var host = Host.CreateDefaultBuilder()
                 .ConfigureServices((context, services) =>
                 {
-                    //services.AddSingleton<IDisplay, Display>();
-                    services.AddTransient<ISpeaker, Speaker>();
                     services.AddTransient<ICPU, CPU>();
                     services.AddTransient<IChip8, Chip8>();
                 })
@@ -40,11 +37,11 @@ namespace Chip8Emulator
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(builder.Build())
                 .Enrich.FromLogContext()
-                //.WriteTo.File($"{Directory.GetCurrentDirectory()}emulator.log")
                 .WriteTo.File(@"D:\\emulator.log")
+                //.WriteTo.File(@$"{Directory.GetCurrentDirectory()}\emulator.log")
                 .CreateLogger();
 
-            Log.Logger.Information("Application Starting");
+            Log.Logger.Information("Application started");
         }
 
         static void BuildConfig(IConfigurationBuilder builder)

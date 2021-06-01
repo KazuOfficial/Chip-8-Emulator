@@ -13,7 +13,7 @@ namespace Chip8Emulator
 {
     public class CPU : ICPU
     {
-        private static RenderWindow win = new RenderWindow(new VideoMode(64, 32), "Chip 8 Emulator");
+        private static RenderWindow win = new RenderWindow(new VideoMode(990, 470), "Chip 8 Emulator");
 
         // 4KB (4096 bytes) of memory
         private byte[] memory = new byte[4096];
@@ -32,15 +32,12 @@ namespace Chip8Emulator
         private static int rows = 32;
 
         private int[] display = new int[cols * rows];
+        private int scale = 15;
 
         private int onNextPress;
 
-        private readonly ISpeaker speaker;
-
-        public CPU(ISpeaker speaker)
+        public CPU()
         {
-            this.speaker = speaker;
-
             win.SetFramerateLimit(60);
             win.SetVerticalSyncEnabled(true);
             win.SetKeyRepeatEnabled(false);
@@ -91,38 +88,29 @@ namespace Chip8Emulator
             { 0xF, false },
         };
 
-        public void Render()
+        private void Render()
         {
             for (var i = 0; i < cols * rows; i++)
             {
-                // Grabs the x position of the pixel based off of `i`
-                var x = (i % cols);
+                var x = (i % cols) * scale;
+                var y = (i / cols) * scale;
 
-                // Grabs the y position of the pixel based off of `i`
-                var y = (i / cols);
-
-                // If the value at this.display[i] == 1, then draw a pixel.
                 if (Convert.ToBoolean(display[i]))
                 {
-                    // Set the pixel color to black
-                    //this.ctx.fillStyle = '#000';
 
                     RectangleShape pixel = new RectangleShape
                     {
-                        Size = new Vector2f(1, 1),
+                        Size = new Vector2f(1 * scale, 1 * scale),
                         FillColor = Color.White,
                         Position = new Vector2f(x, y)
                     };
 
                     win.Draw(pixel);
-
-                    // Place a pixel at position (x, y) with a width and height of scale
-                    //this.ctx.fillRect(x, y, this.scale, this.scale);
                 }
             }
         }
 
-        public bool IsKeyPressed(int keyCode)
+        private bool IsKeyPressed(int keyCode)
         {
             return keyIsActive.FirstOrDefault(x => x.Key == keyCode).Value;
         }
@@ -135,7 +123,6 @@ namespace Chip8Emulator
                 {
                     keyIsActive[keys[e.Code]] = true;
                 }
-                Log.Logger.Information("PRESSED KEY!!!!!!!!!!!!!!!: {pressed}", e.Code);
             }
 
             if (keys.ContainsKey(e.Code))
@@ -153,13 +140,9 @@ namespace Chip8Emulator
             {
                 keyIsActive[keys[e.Code]] = false;
             }
-
-            Log.Logger.Information("RELEASED!!!!!!!!!!!!!!!: {released}", e.Code);
         }
 
-        //Graphics
-
-        public bool SetPixel(int x, int y)
+        private bool SetPixel(int x, int y)
         {
             if (x > cols)
             {
@@ -181,6 +164,8 @@ namespace Chip8Emulator
 
             int pixelLoc = x + (y * cols);
 
+            Array.Resize(ref display, cols * rows + pixelLoc * 2);
+
             display[pixelLoc] ^= 1;
 
             return !Convert.ToBoolean(display[pixelLoc]);
@@ -192,15 +177,10 @@ namespace Chip8Emulator
             Log.Logger.Information("Screen cleared");
         }
 
-        private static void Win_Resized(object sender, SizeEventArgs e)
-        {
-            win.SetView(new View(new FloatRect(0, 0, e.Width, e.Height)));
-        }
-
         private static void Win_Closed(object sender, EventArgs e)
         {
             win.Close();
-            Log.Logger.Information("Window closed");
+            Log.Logger.Information("Emulator closed");
         }
 
         public void LoadSpritesToMemory()
@@ -229,7 +209,7 @@ namespace Chip8Emulator
                 memory[i] = sprites[i];
             }
 
-            Log.Logger.Information("Loaded sprites to memory. Sprites: {sprites}, memory: {memory}", sprites, memory);
+            Log.Logger.Information("Loaded sprites into memory.");
         }
 
         public void LoadProgramIntoMemory(string path)
@@ -241,21 +221,19 @@ namespace Chip8Emulator
                 memory[0x200 + i] = program[i];
             }
 
-            Log.Logger.Information("Program loaded into memory. Program's path: {program}, program's bytes: {bytes}", path, program);
+            Log.Logger.Information("Program {path} loaded into memory.", path);
         }
 
         public void Cycle()
         {
             while (win.IsOpen)
             {
-                Log.Logger.Information("Cycle started.");
                 for (int i = 0; i < speed; i++)
                 {
                     if (!paused)
                     {
                         int opcode = memory[pc] << 8 | memory[pc + 1];
                         ExecuteInstruction(opcode);
-                        Log.Logger.Information("Emulator paused: {paused}, opcode: {opcode}", paused, opcode);
                     }
                 }
 
@@ -273,7 +251,6 @@ namespace Chip8Emulator
                 PlaySound();
 
                 win.Display();
-                Log.Logger.Information("Cycle ended.");
             }
         }
 
@@ -288,22 +265,18 @@ namespace Chip8Emulator
             {
                 soundTimer -= 1;
             }
-
-            Log.Logger.Information("Timers updated. DelayTimer: {delayTimer}, SoundTimer: {soundTimer}", delayTimer, soundTimer);
         }
 
         private void PlaySound()
         {
             if (soundTimer > 0)
             {
-                speaker.Play(50f, 1.2f);
+                Console.Beep(800, 10);
             }
-            else
-            {
-                speaker.Stop();
-            }
-
-            Log.Logger.Information("Sound played");
+            //else
+            //{
+            //    speaker.Stop();
+            //}
         }
 
         private void ExecuteInstruction(int opcode)
@@ -319,74 +292,61 @@ namespace Chip8Emulator
                     {
                         case 0x00E0:
                             Clear();
-                            Log.Logger.Information("Instruction 0x00E0 called. Window cleared.");
                             break;
                         case 0x00EE:
                             pc = stack.Pop();
-                            Log.Logger.Information("Instruction 0x00EE called. pc = stack.Pop(). PC: {pc}.", pc);
                             break;
                     }
 
                     break;
                 case 0x1000:
                     pc = (opcode & 0xFFF);
-                    Log.Logger.Information("Instruction 0x1000 called. pc = (opcode & 0xFFF). PC: {pc}.", pc);
                     break;
                 case 0x2000:
                     stack.Push(pc);
                     pc = (opcode & 0xFFF);
-                    Log.Logger.Information("Instruction 0x2000 called. stack.Push(pc); pc = (opcode & 0xFFF). PC: {pc}.", pc);
                     break;
                 case 0x3000:
                     if (v[x] == (opcode & 0xFF))
                     {
                         pc += 2;
-                        Log.Logger.Information("Instruction 0x3000 called. if (v[x] == (opcode & 0xFF)) THEN pc+= 2. PC: {pc}.", pc);
                     }
                     break;
                 case 0x4000:
                     if (v[x] != (opcode & 0xFF))
                     {
                         pc += 2;
-                        Log.Logger.Information("Instruction 0x4000 called. if (v[x] != (opcode & 0xFF)) THEN pc+= 2. PC: {pc}.", pc);
                     }
                     break;
                 case 0x5000:
                     if (v[x] == v[y])
                     {
                         pc += 2;
-                        Log.Logger.Information("Instruction 0x5000 called. if (v[x] == v[y]) THEN pc+= 2. PC: {pc}.", pc);
                     }
                     break;
                 case 0x6000:
                     v[x] = (opcode & 0xFF);
-                    Log.Logger.Information("Instruction 0x6000 called. v[x] = (opcode & 0xFF). VX: {vx}.", v[x]);
                     break;
                 case 0x7000:
                     v[x] += (opcode & 0xFF);
-                    Log.Logger.Information("Instruction 0x7000 called. v[x] += (opcode & 0xFF). VX: {vx}.", v[x]);
                     break;
                 case 0x8000:
                     switch (opcode & 0xF)
                     {
                         case 0x0:
                             v[x] = v[y];
-                            Log.Logger.Information("Instruction 0x8000 called. v[y] = v[x]. v[y]: {vy}", v[y]);
                             break;
                         case 0x1:
                             v[x] |= v[y];
-                            Log.Logger.Information("Instruction 0x8001 called. v[x] |= v[y]. v[x]: {vx}", v[x]);
                             break;
                         case 0x2:
                             v[x] &= v[y];
-                            Log.Logger.Information("Instruction 0x8002 called. v[x] &= v[y]. v[x]: {vx}", v[x]);
                             break;
                         case 0x3:
                             v[x] ^= v[y];
-                            Log.Logger.Information("Instruction 0x8003 called. v[x] ^= v[y]. v[x]: {vx}", v[x]);
                             break;
                         case 0x4:
-                            var sum = (v[x] += v[y]);
+                            int sum = v[x] += v[y];
 
                             v[0xF] = 0;
 
@@ -396,7 +356,6 @@ namespace Chip8Emulator
                             }
 
                             v[x] = sum;
-                            Log.Logger.Information("Instruction 0x8004 called. ... v[x] = sum. sum: {sum}, v[x]: {vx}", sum, v[x]);
                             break;
                         case 0x5:
                             v[0xF] = 0;
@@ -407,11 +366,10 @@ namespace Chip8Emulator
                             }
 
                             v[x] -= v[y];
-                            Log.Logger.Information("Instruction 0x8005 called. ... v[x] -= v[y]. v[x]: {vx}", v[x]);
                             break;
                         case 0x6:
-                            v[0xF] = (v[x] & 0x1);
-                            Log.Logger.Information("Instruction 0x8006 called. v[0xF] = (v[x] & 0x1). v[0xF]: {v0xF}", v[0xF]);
+                            v[0xF] = v[x] & 0x1;
+                            v[x] >>= 1;
                             break;
                         case 0x7:
                             v[0xF] = 0;
@@ -422,12 +380,10 @@ namespace Chip8Emulator
                             }
 
                             v[x] = v[y] - v[x];
-                            Log.Logger.Information("Instruction 0x8007 called. ... v[x] = v[y] - v[x]. v[x]: {vx}", v[x]);
                             break;
                         case 0xE:
                             v[0xF] = (v[x] & 0x80);
                             v[x] <<= 1;
-                            Log.Logger.Information("Instruction 0x8007 called. v[0xF] = (v[x] & 0x80); v[x] <<= 1. v[0xF]: {v0xF}, v[x]: {vx}", v[0xF], v[x]);
                             break;
                     }
 
@@ -437,32 +393,25 @@ namespace Chip8Emulator
                     if (v[x] != v[y])
                     {
                         pc += 2;
-                        Log.Logger.Information("Instruction 0x9000 called. if (v[x] != v[y]); pc += 2. pc: {pc}", pc);
                     }
                     break;
                 case 0xA000:
-                    i = (opcode & 0xFFF);
-                    Log.Logger.Information("Instruction 0xA000 called. i = (opcode & 0xFFF). i: {i}", i);
+                    i = opcode & 0xFFF;
                     break;
                 case 0xB000:
                     pc = (opcode & 0xFFF) + v[0];
-                    Log.Logger.Information("Instruction 0xB000 called. pc = (opcode & 0xFFF) + v[0];. pc: {pc}", pc);
                     break;
                 case 0xC000:
-                    var rand = new Random();
-                    double randomDouble = rand.NextDouble() * 255;
+                    Random rand = new();
+                    int randomGenerate = rand.Next(1, 255);
 
-                    //!Could be wrong
-                    var random = Math.Floor(randomDouble * 0xFF);
+                    int random = randomGenerate * 0xFF;
 
-                    int toInt = Convert.ToInt32(random);
-
-                    v[x] = toInt & (opcode & 0xFF);
-                    Log.Logger.Information("Instruction 0xC000 called. ... v[x] = RANDOM & (opcode & 0xFF). v[x]: {vx}", v[x]);
+                    v[x] = random & (opcode & 0xFF);
                     break;
                 case 0xD000:
                     int width = 8;
-                    int height = (opcode & 0xF);
+                    int height = opcode & 0xF;
 
                     v[0xF] = 0;
 
@@ -474,7 +423,6 @@ namespace Chip8Emulator
                         {
                             if ((sprite & 0x80) > 0)
                             {
-                                //ErasePixel(v[x] + col, v[y] + row);
                                 if (SetPixel(v[x] + col, v[y] + row))
                                 {
                                     v[0xF] = 1;
@@ -484,7 +432,6 @@ namespace Chip8Emulator
                             sprite <<= 1;
                         }
                     }
-                    Log.Logger.Information("Instruction 0xD000 called. Drawing pixels...");
                     break;
                 case 0xE000:
                     switch (opcode & 0xFF)
@@ -493,14 +440,12 @@ namespace Chip8Emulator
                             if (IsKeyPressed(v[x]))
                             {
                                 pc += 2;
-                                Log.Logger.Information("Instruction 0x9E called. Pressing buttons :D");
                             }
                             break;
                         case 0xA1:
                             if (!IsKeyPressed(v[x]))
                             {
                                 pc += 2;
-                                Log.Logger.Information("Instruction 0xA1 called. Keyboard stuff :D");
                             }
                             break;
                     }
@@ -511,30 +456,24 @@ namespace Chip8Emulator
                     {
                         case 0x07:
                             v[x] = delayTimer;
-                            Log.Logger.Information("Instruction 0x07 called. v[x] = delayTimer. v[x]: {vx}", v[x]);
                             break;
                         case 0x0A:
                             paused = true;
 
                             v[x] = onNextPress;
                             paused = false;
-                            Log.Logger.Information("Instruction 0x0A called. Pause emulator.");
                             break;
                         case 0x15:
                             delayTimer = v[x];
-                            Log.Logger.Information("Instruction 0x15 called. delayTimer = v[x]. DelayTimer: {delayTimer}", delayTimer);
                             break;
                         case 0x18:
                             soundTimer = v[x];
-                            Log.Logger.Information("Instruction 0x18 called. soundTimer = v[x]. SoundTimer: {soundimer}", soundTimer);
                             break;
                         case 0x1E:
                             i += v[x];
-                            Log.Logger.Information("Instruction 0x1E called. i += v[x]. i: {i}", i);
                             break;
                         case 0x29:
                             i = v[x] * 5;
-                            Log.Logger.Information("Instruction 0x29 called. i = v[x] * 5. i: {i}", i);
                             break;
                         case 0x33:
                             memory[i] = Convert.ToByte(v[x] / 100);
@@ -542,21 +481,17 @@ namespace Chip8Emulator
                             memory[i + 1] = Convert.ToByte(v[x] % 100 / 10);
 
                             memory[i + 2] = Convert.ToByte(v[x] % 10);
-
-                            Log.Logger.Information("Instruction 0x33 called. ... memory[i + 2] = Convert.ToByte(v[x] % 10)");
                             break;
                         case 0x55:
-                            for (byte registerIndex = 0; registerIndex <= x; registerIndex++)
+                            for (int registerIndex = 0; registerIndex <= x; registerIndex++)
                             {
                                 memory[i + registerIndex] = Convert.ToByte(v[registerIndex]);
-                                Log.Logger.Information("Instruction 0x55 called. for (byte registerIndex = 0; registerIndex <= x; registerIndex++); memory[i + registerIndex] = Convert.ToByte(v[registerIndex]).");
                             }
                             break;
                         case 0x65:
                             for (int registerIndex = 0; registerIndex <= x; registerIndex++)
                             {
                                 v[registerIndex] = memory[i + registerIndex];
-                                Log.Logger.Information("Instruction 0x65 called. for (int registerIndex = 0; registerIndex <= x; registerIndex++); v[registerIndex] = memory[i + registerIndex].");
                             }
                             break;
                     }
