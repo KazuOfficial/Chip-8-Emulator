@@ -130,19 +130,29 @@ namespace Chip8Emulator
         {
             if (Keyboard.IsKeyPressed(e.Code))
             {
-                keyIsActive[keys[e.Code]] = true;
+                if (keys.ContainsKey(e.Code))
+                {
+                    keyIsActive[keys[e.Code]] = true;
+                }
                 Log.Logger.Information("PRESSED KEY!!!!!!!!!!!!!!!: {pressed}", e.Code);
             }
 
-            if (keyIsActive[keys[e.Code]])
+            if (keys.ContainsKey(e.Code))
             {
-                onNextPress = keys.FirstOrDefault(x => x.Key == e.Code).Value;
+                if (keyIsActive[keys[e.Code]])
+                {
+                    onNextPress = keys.FirstOrDefault(x => x.Key == e.Code).Value;
+                }
             }
         }
 
         private void KeyReleased(object sender, KeyEventArgs e)
         {
-            keyIsActive[keys[e.Code]] = false;
+            if (keys.ContainsKey(e.Code))
+            {
+                keyIsActive[keys[e.Code]] = false;
+            }
+
             Log.Logger.Information("RELEASED!!!!!!!!!!!!!!!: {released}", e.Code);
         }
 
