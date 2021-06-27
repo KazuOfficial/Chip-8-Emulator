@@ -1,8 +1,0 @@
-language: csharp
-os: windows
-mono: none
-dotnet: 5.0.301
-solution: Chip8Emulator.sln
-script:
-  - dotnet restore
-  - dotnet test

@@ -1,7 +1,7 @@
-﻿<Application x:Class="Chip8Emulator.Desktop.App"
+﻿<Application x:Class="Chip8Emulator.WPF.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:Chip8Emulator.Desktop"
+             xmlns:local="clr-namespace:Chip8Emulator.WPF"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          

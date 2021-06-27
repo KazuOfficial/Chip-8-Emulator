@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Chip8Emulator.Desktop
+namespace Chip8Emulator.WPF
 {
     /// <summary>
     /// Interaction logic for App.xaml
